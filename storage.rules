@@ -1,0 +1,56 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return signedIn() && request.auth.token.admin == true;
+    }
+
+    function image() {
+      return request.resource.contentType.matches('image/.*');
+    }
+
+    function max5MB() {
+      return request.resource.size < 5 * 1024 * 1024;
+    }
+
+    match /public/payment-methods/{methodId}/qr/{fileName} {
+      allow read: if true;
+      allow write: if isAdmin() && image() && max5MB();
+    }
+
+    match /public/campaigns/{campaignId}/{fileName} {
+      allow read: if true;
+      allow write: if isAdmin() && image() && max5MB();
+    }
+
+    match /public/assets/lumi/{fileName} {
+      allow read: if true;
+      allow write: if isAdmin()
+        && (
+          image()
+          || request.resource.contentType == 'application/json'
+          || request.resource.contentType == 'application/zip'
+        )
+        && request.resource.size < 10 * 1024 * 1024;
+    }
+
+    match /private/founder-proofs/{entryId}/{fileName} {
+      allow read, write: if isAdmin() && image() && max5MB();
+    }
+
+    match /private/user-uploads/{uid}/{fileName} {
+      allow read, write: if signedIn()
+        && request.auth.uid == uid
+        && image()
+        && max5MB();
+    }
+
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

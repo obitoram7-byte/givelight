@@ -1,0 +1,343 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String         @id @default(uuid()) @db.Uuid
+  nickname        String?
+  email           String?        @unique
+  phone           String?        @unique
+  passwordHash    String?
+  avatarUrl       String?
+  country         String?
+  city            String?
+  role            UserRole       @default(DONOR)
+  isAnonymous     Boolean        @default(true)
+  identities      AuthIdentity[]
+  sessions        Session[]
+  donations       Donation[]
+  ownedTeams      Team[]         @relation("TeamOwner")
+  teamMemberships TeamMember[]
+  badges          Badge[]
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+}
+
+model AuthIdentity {
+  id             String   @id @default(uuid()) @db.Uuid
+  userId         String   @db.Uuid
+  provider       String
+  providerUserId String
+  email          String?
+  phone          String?
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt      DateTime @default(now())
+
+  @@unique([provider, providerUserId])
+}
+
+model OtpCode {
+  id        String    @id @default(uuid()) @db.Uuid
+  contact   String
+  codeHash  String
+  purpose   String
+  expiresAt DateTime
+  usedAt    DateTime?
+  attempts  Int       @default(0)
+  createdAt DateTime  @default(now())
+}
+
+model Session {
+  id               String    @id @default(uuid()) @db.Uuid
+  userId           String    @db.Uuid
+  refreshTokenHash String    @unique
+  deviceName       String?
+  ipHash           String?
+  expiresAt        DateTime
+  revokedAt        DateTime?
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt        DateTime  @default(now())
+}
+
+model Ngo {
+  id                 String               @id @default(uuid()) @db.Uuid
+  name               String
+  registrationNumber String?
+  country            String
+  verificationStatus NgoVerificationStatus @default(PENDING)
+  documents          Json?
+  contactEmail       String?
+  verifiedAt         DateTime?
+  causes             Cause[]
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+}
+
+model Cause {
+  id           String         @id @default(uuid()) @db.Uuid
+  slug         String         @unique
+  title        String
+  description  String         @db.Text
+  story        String?        @db.Text
+  category     CauseCategory
+  goalAmount   Decimal        @db.Decimal(14, 2)
+  currency     String         @default("USD")
+  country      String
+  city         String?
+  ngoId        String         @db.Uuid
+  coverImageUrl String?
+  status       CauseStatus    @default(DRAFT)
+  startsAt     DateTime?
+  endsAt       DateTime?
+  createdBy    String?
+  ngo          Ngo            @relation(fields: [ngoId], references: [id])
+  donations    Donation[]
+  teams        Team[]
+  payouts      Payout[]
+  updates      ImpactUpdate[]
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+}
+
+model Donation {
+  id                 String         @id @default(uuid()) @db.Uuid
+  userId             String?        @db.Uuid
+  guestClaimTokenHash String?       @unique
+  causeId            String         @db.Uuid
+  amount             Decimal        @db.Decimal(14, 2)
+  currency           String
+  convertedAmount    Decimal?       @db.Decimal(14, 2)
+  country            String?
+  city               String?
+  paymentProvider     String?
+  providerOrderId     String?        @unique
+  providerPaymentId   String?        @unique
+  status              DonationStatus @default(CREATED)
+  isAnonymous         Boolean        @default(true)
+  idempotencyKey      String         @unique
+  sessionIdentifier   String? // Hashed session/device identifier
+  paymentMethodId     String?        @db.Uuid
+  isRefunded          Boolean        @default(false)
+  isPublicLeaderboardEligible Boolean @default(true)
+  reviewNote          String?
+  reviewedByAdminId   String?        @db.Uuid
+  user                User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
+  cause               Cause          @relation(fields: [causeId], references: [id])
+  paymentMethod       PaymentMethod? @relation(fields: [paymentMethodId], references: [id])
+  paymentEvents       PaymentEvent[]
+  lightPoints         LightPoint[]
+  ledgerEntries       FundLedgerEntry[]
+  createdAt           DateTime       @default(now())
+  paidAt              DateTime?
+  verifiedAt          DateTime?
+
+  @@index([causeId, status, paidAt])
+}
+
+model PaymentMethod {
+  id               String   @id @default(uuid()) @db.Uuid
+  provider         String // ESEWA | UPI | PAYPAL
+  region           String // NEPAL | INDIA | INTERNATIONAL
+  currency         String
+  displayName      String
+  payeeName        String
+  accountIdentifier String
+  qrImageUrl       String
+  paymentLinkUrl   String?
+  instructionsEn   String   @db.Text
+  instructionsHi   String   @db.Text
+  status           String   @default("ACTIVE") // ACTIVE | PAUSED | DISABLED
+  displayOrder     Int      @default(0)
+  donations        Donation[]
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model LightPoint {
+  id                String   @id @default(uuid()) @db.Uuid
+  donationId        String?  @db.Uuid
+  sessionIdentifier String // Hashed session/device identifier
+  points            Int      @default(0)
+  status            String   @default("PENDING") // PENDING | VERIFIED | REMOVED
+  donation          Donation? @relation(fields: [donationId], references: [id])
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model FundLedgerEntry {
+  id               String   @id @default(uuid()) @db.Uuid
+  type             String // PUBLIC_CONTRIBUTION | FOUNDER_CONTRIBUTION | PAYOUT | REFUND | ADJUSTMENT
+  donationId       String?  @db.Uuid
+  amount           Decimal  @db.Decimal(14, 2)
+  currency         String
+  note             String?
+  proofUrl         String?
+  createdAt        DateTime @default(now())
+  verifiedByAdminId String? @db.Uuid
+  donation         Donation? @relation(fields: [donationId], references: [id])
+}
+
+model AdminAuditLog {
+  id         String   @id @default(uuid()) @db.Uuid
+  adminId    String   @db.Uuid
+  action     String
+  entityType String
+  entityId   String
+  beforeJson Json?
+  afterJson  Json?
+  createdAt  DateTime @default(now())
+}
+
+model PaymentEvent {
+  id             String   @id @default(uuid()) @db.Uuid
+  donationId     String   @db.Uuid
+  provider       String
+  eventType      String
+  providerEventId String  @unique
+  payloadHash    String
+  processedAt    DateTime @default(now())
+  donation       Donation @relation(fields: [donationId], references: [id], onDelete: Cascade)
+}
+
+model Team {
+  id          String       @id @default(uuid()) @db.Uuid
+  name        String
+  slug        String       @unique
+  inviteCode  String       @unique
+  ownerUserId String       @db.Uuid
+  causeId     String?      @db.Uuid
+  goalAmount  Decimal?     @db.Decimal(14, 2)
+  owner       User         @relation("TeamOwner", fields: [ownerUserId], references: [id])
+  cause       Cause?       @relation(fields: [causeId], references: [id])
+  members     TeamMember[]
+  createdAt   DateTime     @default(now())
+}
+
+model TeamMember {
+  id       String   @id @default(uuid()) @db.Uuid
+  teamId   String   @db.Uuid
+  userId   String   @db.Uuid
+  joinedAt DateTime @default(now())
+  team     Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, userId])
+}
+
+model Badge {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  badgeType String
+  metadata  Json?
+  earnedAt  DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model LeaderboardSnapshot {
+  id               String   @id @default(uuid()) @db.Uuid
+  scopeType        String   @default("GLOBAL")
+  scopeId          String?
+  periodType       String   @default("ALL_TIME")
+  timezone         String   @default("UTC")
+  rank             Int
+  donorIdentifier  String
+  verifiedAmount   Decimal  @db.Decimal(14, 2)
+  currency         String   @default("NPR")
+  previousRank     Int?
+  calculatedAt     DateTime @default(now())
+
+  @@unique([scopeType, scopeId, periodType, rank])
+}
+
+model LeaderboardPrivacySettings {
+  id                 String   @id @default(uuid()) @db.Uuid
+  userId             String?  @unique @db.Uuid
+  guestClaimToken    String?  @unique
+  displayMode        String   @default("ANONYMOUS")
+  publicNickname     String?
+  publicAvatarUrl    String?
+  showLocation       Boolean  @default(false)
+  consentUpdatedAt   DateTime @default(now())
+}
+
+model Payout {
+  id         String       @id @default(uuid()) @db.Uuid
+  causeId    String       @db.Uuid
+  amount     Decimal      @db.Decimal(14, 2)
+  currency   String
+  status     PayoutStatus @default(PENDING)
+  proofUrl   String?
+  approvedBy String?
+  paidAt     DateTime?
+  cause      Cause        @relation(fields: [causeId], references: [id])
+  createdAt  DateTime     @default(now())
+}
+
+model ImpactUpdate {
+  id          String   @id @default(uuid()) @db.Uuid
+  causeId     String   @db.Uuid
+  title       String
+  description String   @db.Text
+  mediaUrls   String[]
+  publishedAt DateTime?
+  cause       Cause    @relation(fields: [causeId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+}
+
+enum UserRole {
+  DONOR
+  TEAM_LEADER
+  NGO_PARTNER
+  MODERATOR
+  ADMIN
+}
+
+enum NgoVerificationStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum CauseCategory {
+  EDUCATION
+  HEALTH
+  FOOD
+  DISASTER
+  GLOBAL
+}
+
+enum CauseStatus {
+  DRAFT
+  ACTIVE
+  COMPLETED
+  PAUSED
+}
+
+enum DonationStatus {
+  CREATED
+  PENDING_PAYMENT
+  PAID
+  FAILED
+  EXPIRED
+  RECEIPT_ISSUED
+  ALLOCATED_TO_CAUSE
+  PAYOUT_PENDING
+  PAID_OUT
+  IMPACT_REPORTED
+  SELF_CONFIRMED
+  VERIFIED
+  REJECTED
+  BANNED
+}
+
+enum PayoutStatus {
+  PENDING
+  APPROVED
+  PAID
+  REJECTED
+}

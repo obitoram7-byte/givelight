@@ -1,0 +1,20 @@
+{
+  "framework": "nextjs",
+  "buildCommand": "npm run build",
+  "devCommand": "npm run dev",
+  "installCommand": "npm install",
+  "cleanUrls": true,
+  "trailingSlash": false,
+  "env": {
+    "NEXT_PUBLIC_FIREBASE_API_KEY": "AIzaSyBODMkynI_usi7GipJxpRDArZL8e23cfsY",
+    "NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN": "givelight-2e7e4.firebaseio.com",
+    "NEXT_PUBLIC_FIREBASE_PROJECT_ID": "givelight-2e7e4",
+    "NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET": "givelight-2e7e4.firebasestorage.app",
+    "NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID": "795261101464",
+    "NEXT_PUBLIC_FIREBASE_APP_ID": "1:795261101464:web:d7d21a24f940733f6f37ed",
+    "NEXT_PUBLIC_FIREBASE_DATABASE_URL": "https://givelight-2e7e4-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "NEXT_PUBLIC_BASE_CURRENCY": "NPR",
+    "NEXT_PUBLIC_DEFAULT_LOCALE": "en",
+    "NEXT_PUBLIC_ENABLE_DEMO_MODE": "false"
+  }
+}

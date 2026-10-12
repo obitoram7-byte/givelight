@@ -14,11 +14,9 @@
     "db:seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
-    "@next/swc-win32-x64-msvc": "^15.5.27",
     "@prisma/client": "^6.16.2",
     "@react-three/drei": "^10.7.6",
     "@react-three/fiber": "^9.4.0",
-    "@tailwindcss/oxide-win32-x64-msvc": "^4.3.3",
     "@tanstack/react-query": "^5.89.0",
     "clsx": "^2.1.1",
     "firebase": "^13.0.0",

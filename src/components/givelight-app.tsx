@@ -29,7 +29,7 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { causes, leaderboards, recentDonations, stats, type Cause } from "@/lib/demo-data";
+import { causes, leaderboardDemoData, recentDonations, stats, type Cause } from "@/lib/demo-data";
 import { shouldAdvanceLiveTotal, shouldCelebrateVerifiedDonation, MOTION_DURATIONS, MOTION_EASINGS } from "@/lib/motion";
 import { usePreferences } from "@/lib/preferences";
 import { AmountChip, AuthModal, Button, Card, LeaderboardTable, ProgressBar, Toast } from "@/components/ui";
@@ -543,7 +543,7 @@ export default function GivelightApp() {
 
       <section className="section section-tint" id="community">
         <div className="section-heading"><div><span className="eyebrow"><UsersRound size={13} /> · together, further</span><h2>{t.communityTitle}</h2></div><p>{t.communityDescription}</p></div>
-        <div className="bottom-grid"><div><div className="recent-title" style={{ marginBottom: 15 }}>{t.teams}<span style={{ color: "#809085", fontSize: 10 }}>This month <ChevronDown size={12} style={{ verticalAlign: "-2px" }} /></span></div><LeaderboardTable rows={leaderboards.map((item) => ({ ...item, amount: formatMoney(item.amount, "USD") }))} /></div>
+        <div className="bottom-grid"><div><div className="recent-title" style={{ marginBottom: 15 }}>{t.teams}<span style={{ color: "#809085", fontSize: 10 }}>This month <ChevronDown size={12} style={{ verticalAlign: "-2px" }} /></span></div><LeaderboardTable rows={leaderboardDemoData.map((item) => ({ name: item.nickname, detail: item.locationLabel ?? item.displayMode, amount: `${item.verifiedAmount.toLocaleString()} ${item.currency}` }))} /></div>
           <div className="transparency-card" id="transparency"><span className="eyebrow" style={{ color: "#f3c46d" }}><ShieldCheck size={14} /> Givelight promise</span><h3>{t.transparency}</h3><p>Trust should be visible. Every campaign is reviewed with local partners, and every update belongs to the people doing the work.</p><div className="transparency-list"><div className="transparency-line"><Check size={14} />{t.verify}</div><div className="transparency-line"><Check size={14} />{t.audit}</div><div className="transparency-line"><Check size={14} />{t.updates}</div><div className="transparency-line"><Check size={14} />{t.policy}</div></div><a className="button button-gold" href="#causes">How giving works <ArrowRight size={14} /></a></div></div>
       </section>
 

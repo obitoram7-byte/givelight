@@ -48,7 +48,7 @@ export default function HeroSection() {
               className="px-8 py-4 bg-white text-forest-green border-2 border-forest-green rounded-xl font-semibold text-lg hover:bg-emerald-50 transition-colors flex items-center gap-2"
             >
               <Globe2 size={20} />
-              {t.hero.how}
+              {t.hero.secondary}
             </motion.button>
           </div>
 

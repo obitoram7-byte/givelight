@@ -1,56 +1,118 @@
 # Givelight
 
-A guest-first micro-donation experience for Nepal, India, and global donors. The web app starts in demo mode: no database or payment credentials are required to explore the experience.
+Givelight is a personal public experiment in generosity. The product is not an NGO marketplace, charity registry, or multi-cause fundraising app. It is a transparent live fund where small public contributions can be reviewed and added to a verified fund before they appear publicly.
 
-## Run locally
+## Product rules
+
+- No fake NGO or campaign content
+- No fake beneficiary claims or guaranteed payouts
+- No fake verified partner badges
+- No fake donor names, donations, or countdowns
+- Public totals and leaderboard update only from verified admin-approved records
+- Manual QR payment + manual admin review is the current workflow
+
+## Local setup
 
 ```bash
 npm install
 npm run dev
 ```
 
-Open http://localhost:3000. Demo donations are simulated in the browser and are never presented as verified real payments. To configure PostgreSQL, copy `.env.example` to `.env`, set `DATABASE_URL`, then run `npm run db:generate` and `npm run db:migrate`. Demo payment mode remains enabled unless explicitly replaced with a real, server-side provider adapter.
+Then open http://localhost:3000.
 
-## Stack
+## Firebase setup
 
-Next.js App Router, TypeScript, Tailwind CSS v4, Framer Motion, GSAP, React Three Fiber, Zustand, TanStack Query, Prisma/PostgreSQL, and Auth.js.
+Create a Firebase project and enable:
 
-## Project map
+- Authentication
+  - Anonymous sign-in
+  - Google provider
+- Firestore
+- Realtime Database
+- Storage
 
-- `src/app`: routes, API routes, and global layout
-- `src/components`: reusable interface and donation components
-- `src/lib`: typed demo data and domain helpers
-- `prisma`: relational schema and seed data
+Set the public web config in your environment file, for example:
 
-## Included demo flows
+```bash
+NEXT_PUBLIC_FIREBASE_API_KEY=...
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=...
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=...
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=...
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=...
+NEXT_PUBLIC_FIREBASE_APP_ID=...
+NEXT_PUBLIC_FIREBASE_DATABASE_URL=...
+```
 
-- English/Hindi switcher, light/dark themes, reduced-motion support, and responsive navigation
-- Cause region/category filters, sample partner/campaign details, progress, and impact sections
-- Guest donation intent and explicit demo confirmation; checkout never asks for contact information
-- Share-card preview, PNG download, native share, and copy-link controls
-- Cause, live-stats, leaderboard, donation-status, and stats-stream API routes
-- PostgreSQL Prisma schema and sample NGO/campaign seed data
+## Admin claim setup
 
-## Not enabled for real donations
+Use the owner’s real Google/Gmail UID from Firebase Console:
 
-The payment-provider interface is intentionally unregistered, so real provider webhooks return `503` until a provider-specific adapter is implemented and configured. The webhook route verifies through that adapter before it records a unique provider event and transitions a pending donation to paid inside a database transaction. Auth.js sign-in, OTP, guest claiming, teams, payouts, and admin actions are also disabled until their providers, persistence, role checks, and operational policies are configured. Those routes fail closed rather than simulate real authorization.
+1. Go to Firebase Console → Authentication → Users
+2. Copy the owner Google UID
+3. Run:
 
-The current demo store is process-local and is not durable or suitable for multi-instance deployments. Demo totals only adjust for confirmed USD demo gifts; no fake exchange rates are applied to NPR/INR. The visible starting totals, partner verification, and campaign progress are illustrative sample data, not real fundraising claims.
+```bash
+npm run set-admin -- YOUR_FIREBASE_UID
+```
 
-## Payment and security boundary
+Then tell the owner to log out and log back in, or call `getIdToken(true)` to refresh the token.
 
-Guest checkout does not ask for contact details or login. The included checkout is demo-only; it does not contact FonePay, eSewa, Khalti, Razorpay, Stripe, or PayPal. Production payment adapters must create orders on the server, validate provider signatures against the raw webhook body, deduplicate provider event IDs in a database transaction, and only then mark donations paid. Keep all provider secrets server-only. Never count a browser callback as payment confirmation.
+## Verify admin claim
 
-The schema includes one-time guest claim tokens, identity/session records, provider events, causes, NGOs, teams, payouts, and impact updates. Live values in the initial interface are clearly illustrative demo data.
+```bash
+npm run verify-admin -- YOUR_FIREBASE_UID
+```
 
-## Motion and accessibility notes
+## Firebase CLI commands
 
-The app uses a shared motion pattern in `src/lib/motion.ts` and the existing Framer Motion stack to keep animation purposeful: micro-interactions stay around 180–220ms, screen transitions around 320ms, and confirmation celebrations stay short and verified-only. Reduced-motion users keep the same information and actions available without movement-heavy transitions.
+```bash
+firebase login
+firebase use <project-id>
+firebase deploy --only firestore:rules,storage,functions
+```
 
-The web version emphasizes a cinematic hero reveal, scroll-triggered story chapters, a live counter that only animates after verified total changes, and a story-card export sized for 9:16 sharing. The app also avoids counting any donation as successful before the backend confirmation step completes.
+## Cloud Functions billing note
 
-This repository contains the web app only; there is no Android module or Compose project to update in the current workspace. If a native Android version is added later, it should use Compose-native animation APIs, system reduced-motion preferences, and only a small curated Lottie asset for a success spark while the rest of the interaction remains native and performant.
+The Firebase functions and admin tooling rely on Firebase services. Some features, including Cloud Functions and Storage, require a Firebase billing plan / Blaze project depending on your Firebase setup.
 
-## Production follow-through
+## Owner workflow
 
-Before accepting real donations, configure approved provider accounts, implement and test each provider adapter and signed webhook, add rate limiting and operational monitoring, review NGO/campaign verification and payout controls, and publish applicable privacy, terms, refund, and support policies. Auth.js provider credentials and database-backed sessions also need environment-specific configuration.
+- Add payment QR methods in the admin dashboard
+- Review self-confirmed contributions
+- Approve or reject each contribution manually
+- Add founder contributions as required
+- Publish future plans or transparency updates only when the owner is ready
+
+## QR upload workflow
+
+- Upload QR images in the admin area
+- Add payee name, account or UPI ID, and payment link
+- Mark the active region and currency
+- Keep the payment method active only when the owner is ready to receive public contributions
+
+## Production checklist
+
+- Anonymous Auth enabled
+- Google provider enabled
+- Firestore rules deployed
+- Realtime Database rules deployed
+- Storage rules deployed
+- Admin custom claim set via Firebase Admin SDK only
+- No client-side admin role grant
+- Manual verification process documented for the owner
+- No secrets committed to Git
+
+## Development and emulator testing
+
+```bash
+firebase emulators:start
+npm run dev
+```
+
+## Manual payment limitation
+
+This app is intentionally built around manual QR payment confirmation and manual review by the owner. There is no automatic merchant payment gateway, webhook, or instant credit system yet.
+
+## Important security warning
+
+Never commit Firebase service-account JSON or other secrets. Keep all privileged operations in Firebase Admin SDK scripts or Cloud Functions, not in frontend code.

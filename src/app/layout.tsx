@@ -1,15 +1,16 @@
 import type { Metadata, Viewport } from "next";
 import { LanguageProvider } from "@/lib/language-context";
 import { AuthProvider } from "@/components/AuthProvider";
+import QueryProvider from "@/components/query-provider";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Givelight — Your giving lights the world",
-  description: "Small gifts. Real-world light. Support verified community causes with a simple, guest-first donation.",
+  title: "Givelight — A transparent giving experiment",
+  description: "A personal public experiment in small contributions, transparent totals, and manual verification. Contributions are not currently being accepted.",
   applicationName: "Givelight",
   openGraph: {
-    title: "Givelight — Your giving lights the world",
-    description: "Every small gift can brighten a life.",
+    title: "Givelight — A transparent giving experiment",
+    description: "Small contributions, transparent totals, and manual verification. Contributions are not currently being accepted.",
     type: "website",
   },
 };
@@ -24,11 +25,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" suppressHydrationWarning>
       <body>
-        <LanguageProvider>
-          <AuthProvider>
-            {children}
-          </AuthProvider>
-        </LanguageProvider>
+        <QueryProvider>
+          <LanguageProvider>
+            <AuthProvider>
+              {children}
+            </AuthProvider>
+          </LanguageProvider>
+        </QueryProvider>
       </body>
     </html>
   );

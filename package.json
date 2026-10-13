@@ -11,7 +11,9 @@
     "test": "tsx --test tests/*.test.ts",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
-    "db:seed": "tsx prisma/seed.ts"
+    "db:seed": "tsx prisma/seed.ts",
+    "set-admin": "tsx functions/scripts/setAdminClaim.ts",
+    "verify-admin": "tsx functions/scripts/verifyAdmin.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.16.2",
@@ -20,6 +22,7 @@
     "@tanstack/react-query": "^5.89.0",
     "clsx": "^2.1.1",
     "firebase": "^13.0.0",
+    "firebase-admin": "^13.0.0",
     "framer-motion": "^12.43.0",
     "gsap": "^3.13.0",
     "hls.js": "^1.7.3",
